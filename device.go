@@ -1,10 +1,13 @@
+// Copyright 2017 The go-oceanconnect authors. All rights reserved.
+// Use of this source code is governed by a MIT-style
+// license that can be found in the LICENSE file.
+
 package oceanconnect
 
 import (
 	"encoding/json"
 	"errors"
 	"net/http"
-	"strings"
 )
 
 // Device struct with device data
@@ -84,8 +87,4 @@ func (d *Device) GetHistoricalData() ([]DeviceData, error) {
 		return nil, err
 	}
 	return dh.DeviceData, nil
-}
-
-func CalculateDeviceUID(imei string) string {
-	return "04" + strings.Repeat("0", 30-len(imei)) + imei
 }

@@ -1,3 +1,7 @@
+// Copyright 2017 The go-oceanconnect authors. All rights reserved.
+// Use of this source code is governed by a MIT-style
+// license that can be found in the LICENSE file.
+
 package main
 
 import (
@@ -6,7 +10,7 @@ import (
 
 	"github.com/Sirupsen/logrus"
 	"github.com/dualinventive/go-oceanconnect"
-	yaml "gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v2"
 )
 
 var (

@@ -1,3 +1,7 @@
+// Copyright 2017 The go-oceanconnect authors. All rights reserved.
+// Use of this source code is governed by a MIT-style
+// license that can be found in the LICENSE file.
+
 package oceanconnect
 
 import (
@@ -20,9 +24,9 @@ func TestRenewal(t *testing.T) {
 	defer s.Close()
 
 	c := Client{
-		c:     &http.Client{},
-		cfg:   Config{
-			URL: s.URL,
+		c: &http.Client{},
+		cfg: Config{
+			URL:   s.URL,
 			AppID: "<appid>",
 		},
 	}
