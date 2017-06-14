@@ -20,9 +20,11 @@ func TestRenewal(t *testing.T) {
 	defer s.Close()
 
 	c := Client{
-		appID: "<appid>",
 		c:     &http.Client{},
-		url:   s.URL,
+		cfg:   Config{
+			URL: s.URL,
+			AppID: "<appid>",
+		},
 	}
 
 	// Test with 300 sec expiry a immediate re-login is issued
