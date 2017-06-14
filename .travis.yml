@@ -3,6 +3,7 @@ sudo: false
 
 go:
   - go1.7
+  - go1.8
   - tip
 
 before_install:
