@@ -1,0 +1,5 @@
+cmd/regdevices/regdevices
+cmd/regdevices/config.yml
+cmd/regdevices/regdevices.exe
+*.crt
+*.key
