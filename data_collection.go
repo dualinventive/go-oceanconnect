@@ -96,7 +96,7 @@ func (c *Client) RegisterDevice(imei string, timeoutV ...uint) (*RegistrationRep
 		VerifyCode: imei,
 		NodeID:     imei,
 		Timeout:    timeout,
-		EndUserID:  "DI", //CalculateDeviceUID(imei),
+		EndUserID:  c.cfg.EndUserID,
 	}
 	body, err := json.Marshal(b)
 	if err != nil {
