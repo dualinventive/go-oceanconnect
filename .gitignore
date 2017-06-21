@@ -1,8 +1,11 @@
 cmd/regdevices/regdevices
 cmd/regdevices/config.yml
 cmd/regdevices/regdevices.exe
-cmd/readdata/readdata.exe
+cmd/readdata/readdata
 cmd/readdata/config.yml
 cmd/readdata/readdata.exe
+cmd/sendcommand/sendcommand
+cmd/sendcommand/config.yml
+cmd/sendcommand/sendcommand.exe
 *.crt
 *.key
