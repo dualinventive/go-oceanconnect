@@ -18,30 +18,13 @@ type deviceResponse struct {
 	Devices    []Device
 }
 
-// Services struct with service data
-type Services struct {
-	ServiceID   string
-	ServiceType string
-	Data        `json:"data"`
-	EventTime   OcTime
-	ServiceInfo string
-}
-
 // Data struct containing possible data
 type Data struct {
 	RawData string
 }
 
-// Service struct with service data
-type Service struct {
-	ServiceID   string
-	ServiceType string
-	Data        `json:"data"`
-	EventTime   OcTime
-}
-
 // Subscribe to notifications
-func (c *Client) Subscribe(url string) error {
+func (c *Client) Subscribe(url string) (*Server, error) {
 	type subReq struct {
 		NotifyType  string `json:"notifyType"`
 		CallbackURL string `json:"callbackurl"`
@@ -53,20 +36,20 @@ func (c *Client) Subscribe(url string) error {
 	}
 	body, err := json.Marshal(b)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	r, err := http.NewRequest(http.MethodPost, c.cfg.URL+"/iocm/app/sub/v1.1.0/subscribe", bytes.NewBuffer(body))
 	if err != nil {
-		return err
+		return nil, err
 	}
 	resp, err := c.doRequest(r)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if resp.StatusCode != http.StatusCreated {
-		return errors.New("invalid response code: " + resp.Status)
+		return nil, errors.New("invalid response code: " + resp.Status)
 	}
-	return nil
+	return &Server{}, nil
 }
 
 // RegistrationReply for RegisterDevice

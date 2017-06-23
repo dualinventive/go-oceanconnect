@@ -22,8 +22,17 @@ type Device struct {
 	CreateTime       OcTime
 	LastModifiedTime OcTime
 	DeviceInfo       `json:"deviceInfo"`
-	Services         []Services
+	Services         []Service
 	client           *Client
+}
+
+// Service struct which holds service information data
+type Service struct {
+	ServiceID   string
+	ServiceType string
+	Data        `json:"data"`
+	EventTime   OcTime
+	ServiceInfo string `json:",omitEmpty"`
 }
 
 // DeviceInfo struct with device info data
