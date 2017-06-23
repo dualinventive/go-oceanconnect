@@ -8,9 +8,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
+	"net/http/httputil"
+
+	"github.com/Sirupsen/logrus"
 )
+
+type Server struct {
+}
 
 //DeviceDataChanged stuct with response data
 type DeviceDataChanged struct {
@@ -21,25 +26,33 @@ type DeviceDataChanged struct {
 	Service    `json:"service"`
 }
 
-func handler(w http.ResponseWriter, r *http.Request) {
+func (s *Server) handler(w http.ResponseWriter, r *http.Request) {
+
 	fmt.Println("Got request:")
-	fmt.Printf("%+v\n", r.Header)
+	rd, _ := httputil.DumpRequest(r, true)
+	fmt.Println(string(rd))
+
 	contents, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		log.Fatal(err)
+		logrus.Errorf("err: %v", err)
+		return
 	}
-	fmt.Printf("%s\n\n", string(contents))
 
 	var data DeviceDataChanged
 	if err := json.Unmarshal(contents, &data); err != nil {
-		log.Fatal(err)
+		logrus.Errorf("err: %v", err)
+		return
 	}
 	fmt.Printf("data: %+v\n", data)
 
 }
 
+func (s *Server) ListenAndServe(uri string) error {
+	http.HandleFunc("/", s.handler)
+	return http.ListenAndServe(uri, nil)
+}
+
 // NewServer creates new server
-func NewServer() {
-	http.HandleFunc("/", handler)
-	http.ListenAndServe(":8080", nil)
+func NewServer() *Server {
+	return &Server{}
 }
