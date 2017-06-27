@@ -18,19 +18,12 @@ type deviceResponse struct {
 	Devices    []Device
 }
 
-// Data struct containing possible data
-type Data struct {
-	RawData string
-}
-
 // Subscribe to notifications
 func (c *Client) Subscribe(url string) (*Server, error) {
-	type subReq struct {
+	b := struct {
 		NotifyType  string `json:"notifyType"`
 		CallbackURL string `json:"callbackurl"`
-	}
-
-	b := subReq{
+	}{
 		NotifyType:  "deviceDataChanged",
 		CallbackURL: url,
 	}

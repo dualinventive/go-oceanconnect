@@ -6,64 +6,59 @@ package oceanconnect
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
-	"net/http/httputil"
+
+	"sync"
+
+	"io/ioutil"
 
 	"github.com/Sirupsen/logrus"
 )
 
+type NotificationFunc func(interface{}) error
+
 type Server struct {
+	cbsLock sync.RWMutex
+	cbs     map[Notification]NotificationFunc
 }
 
 func (s *Server) handler(w http.ResponseWriter, r *http.Request) {
+	buf, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		return
+	}
 
-	fmt.Println("Got request:")
-	rd, _ := httputil.DumpRequest(r, true)
-	fmt.Println(string(rd))
-
-	dec := json.NewDecoder(r.Body)
 	var n struct {
 		NotifyType string `json:"notifyType"`
 	}
-
-	if err := dec.Decode(&n); err != nil {
+	if err := json.Unmarshal(buf, &n); err != nil {
 		logrus.Errorf("error decoding notification type")
+		return
 	}
 
-	switch Notification(n.NotifyType) {
-	case NotificationDeviceAdded:
-		logrus.Infof("Notification received: %d", NotificationDeviceAdded)
-	case NotificationDeviceInfoChanged:
-		logrus.Infof("Notification received: %d", NotificationDeviceInfoChanged)
-	case NotificationDeviceDataChanged:
-		logrus.Infof("Notification received: %d", NotificationDeviceDataChanged)
-	case NotificationDeviceDeleted:
-		logrus.Infof("Notification received: %d", NotificationDeviceDeleted)
-	case NotificationMessageConfirm:
-		logrus.Infof("Notification received: %d", NotificationMessageConfirm)
-	case NotificationCommandResponse:
-		logrus.Infof("Notification received: %d", NotificationCommandResponse)
-	case NotificationDeviceEvent:
-		logrus.Infof("Notification received: %d", NotificationDeviceEvent)
-	case NotificationServiceInfoChanged:
-		logrus.Infof("Notification received: %d", NotificationServiceInfoChanged)
-	case NotificationRuleEvent:
-		logrus.Infof("Notification received: %d", NotificationRuleEvent)
+	if err := s.runCallback(Notification(n.NotifyType), buf); err != nil {
+		logrus.Errorf("Error running callback: %v", err)
+		return
 	}
+}
 
-	/*	contents, err := ioutil.ReadAll(r.Body)
+func (s *Server) runCallback(not Notification, dec []byte) error {
+	s.cbsLock.RLock()
+	defer s.cbsLock.RUnlock()
+
+	if s.cbs == nil {
+		logrus.Infof("no callbacks registered, callback received")
+	}
+	cb, ok := s.cbs[not]
+	if ok {
+		v, err := notificationDeserializer(not, dec)
 		if err != nil {
-			logrus.Errorf("err: %v", err)
-			return
+			return err
 		}
-
-		var data DeviceDataChanged
-		if err := json.Unmarshal(contents, &data); err != nil {
-			logrus.Errorf("err: %v", err)
-			return
-		}
-		fmt.Printf("data: %+v\n", data)*/
+		return cb(v)
+	}
+	logrus.Debugf("no callback registered for %s", string(not))
+	return nil
 }
 
 func (s *Server) ListenAndServe(uri string) error {
@@ -71,7 +66,11 @@ func (s *Server) ListenAndServe(uri string) error {
 	return http.ListenAndServe(uri, nil)
 }
 
-// NewServer creates new server
-func NewServer() *Server {
-	return &Server{}
+func (s *Server) RegisterCallback(not Notification, cb NotificationFunc) {
+	s.cbsLock.Lock()
+	if s.cbs == nil {
+		s.cbs = make(map[Notification]NotificationFunc)
+	}
+	s.cbs[not] = cb
+	s.cbsLock.Unlock()
 }

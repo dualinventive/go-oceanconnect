@@ -5,7 +5,10 @@
 package oceanconnect
 
 import (
+<<<<<<< 7137e20151b2fc07385a9bbfa8b15ac60132c8e9
 	"bytes"
+=======
+>>>>>>> Message pushing work in progress, also fix automatic base64 decoding
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -30,9 +33,40 @@ type Device struct {
 type Service struct {
 	ServiceID   string
 	ServiceType string
-	Data        `json:"data"`
+	Data        []byte `json:"data"`
 	EventTime   OcTime
 	ServiceInfo string `json:",omitEmpty"`
+}
+
+func (u *Service) UnmarshalJSON(data []byte) error {
+	srvID := &struct {
+		ServiceID string
+	}{}
+
+	if err := json.Unmarshal(data, srvID); err != nil {
+		return err
+	}
+	if srvID.ServiceID != "RawData" {
+		return errors.New("service type not supported: " + srvID.ServiceID)
+	}
+
+	type Alias Service
+
+	aux := &struct {
+		Data struct {
+			RawData string `json:"rawData"`
+		} `json:"data"`
+		*Alias
+	}{
+		Alias: (*Alias)(u),
+	}
+
+	if err := json.Unmarshal(data, aux); err != nil {
+		return err
+	}
+	var err error
+	u.Data, err = base64.StdEncoding.DecodeString(aux.Data.RawData)
+	return err
 }
 
 // DeviceInfo struct with device info data
@@ -75,8 +109,26 @@ type DeviceData struct {
 	GatewayID string
 	Appid     string
 	ServiceIS string
-	Data      `json:"data"`
+	Data      []byte `json:"data"`
 	Timestamp OcTime
+}
+
+func (u *DeviceData) UnmarshalJSON(data []byte) error {
+	type Alias DeviceData
+	aux := &struct {
+		Data struct {
+			RawData string `json:"rawData"`
+		} `json:"data"`
+		*Alias
+	}{
+		Alias: (*Alias)(u),
+	}
+	if err := json.Unmarshal(data, &aux); err != nil {
+		return err
+	}
+	var err error
+	u.Data, err = base64.StdEncoding.DecodeString(aux.Data.RawData)
+	return err
 }
 
 // GetHistoricalData returns data from specific device

@@ -4,6 +4,11 @@
 
 package oceanconnect
 
+import (
+	"encoding/json"
+	"errors"
+)
+
 type Notification string
 
 const (
@@ -43,10 +48,31 @@ const (
 	NotificationRuleEvent Notification = "ruleEvent"
 )
 
+func notificationDeserializer(not Notification, in []byte) (interface{}, error) {
+	switch not {
+	case NotificationDeviceDataChanged:
+		s := &DeviceDataChanged{}
+		if err := json.Unmarshal(in, s); err != nil {
+			return nil, err
+		}
+		return s, nil
+	case NotificationDeviceAdded:
+	case NotificationDeviceInfoChanged:
+	case NotificationDeviceDeleted:
+	case NotificationMessageConfirm:
+	case NotificationCommandResponse:
+	case NotificationDeviceEvent:
+	case NotificationServiceInfoChanged:
+	case NotificationRuleEvent:
+		break
+	}
+	return nil, errors.New("not implemented")
+}
+
 //DeviceDataChanged struct with device data
 type DeviceDataChanged struct {
 	DeviceID  string
 	GatewayID string
 	RequestID string
-	Service   `json:"service"`
+	Service   Service `json:"service"`
 }
