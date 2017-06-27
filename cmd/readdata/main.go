@@ -5,7 +5,6 @@
 package main
 
 import (
-	"encoding/base64"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -28,9 +27,8 @@ func printData(dat []oceanconnect.DeviceData) {
 	n := 0
 	for n < *rows && len(dat) > n {
 		msg := dat[n]
-		raw, _ := base64.StdEncoding.DecodeString(msg.Data.RawData)
 		fmt.Printf("%v -- ", msg.Timestamp.Format(time.Stamp))
-		for _, b := range raw {
+		for _, b := range msg.Data {
 			fmt.Printf("%02x ", b)
 		}
 		fmt.Printf("\n")
