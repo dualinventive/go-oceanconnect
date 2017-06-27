@@ -7,7 +7,6 @@ package oceanconnect
 import (
 	"encoding/json"
 	"errors"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"time"
@@ -36,15 +35,8 @@ func (c *Client) Login() error {
 	if resp.StatusCode != http.StatusOK {
 		return errors.New("invalid response code: " + resp.Status)
 	}
-
-	contents, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return err
-	}
-
-	// Save response to Login struct
 	l := loginResponse{}
-	err = json.Unmarshal(contents, &l)
+	err = json.NewDecoder(resp.Body).Decode(&l)
 	if err == nil {
 		c.token = l.AccessToken
 		c.tokenExpires = time.Now().Add(time.Second * time.Duration(l.ExpiresIn))

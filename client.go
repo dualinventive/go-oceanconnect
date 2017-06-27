@@ -8,6 +8,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"strconv"
 	"sync"
@@ -71,6 +72,14 @@ func NewClient(c Config) (*Client, error) {
 	}, nil
 }
 
+func (c *Client) request(method, urlStr string, body io.Reader) (*http.Response, error) {
+	r, err := http.NewRequest(method, c.cfg.URL+urlStr, body)
+	if err != nil {
+		return nil, err
+	}
+	return c.doRequest(r)
+}
+
 func (c *Client) doRequest(req *http.Request) (*http.Response, error) {
 	c.reqLock.Lock()
 	defer c.reqLock.Unlock()
@@ -88,13 +97,7 @@ func (c *Client) doRequest(req *http.Request) (*http.Response, error) {
 
 // GetDevices returns struct with devices
 func (c *Client) GetDevices(dev GetDevicesStruct) ([]Device, error) {
-	s := c.getQueryStringForDeviceGet(dev)
-	r, err := http.NewRequest(http.MethodGet, s, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	resp, err := c.doRequest(r)
+	resp, err := c.request(http.MethodGet, c.getQueryStringForDeviceGet(dev), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -116,7 +119,7 @@ func (c *Client) GetDevices(dev GetDevicesStruct) ([]Device, error) {
 }
 
 func (c *Client) getQueryStringForDeviceGet(dev GetDevicesStruct) string {
-	s := c.cfg.URL + "/iocm/app/dm/v1.1.0/devices?"
+	s := "/iocm/app/dm/v1.1.0/devices?"
 	if dev.GatewayID != "" {
 		s += "gatewayId=" + dev.GatewayID + "&"
 	}

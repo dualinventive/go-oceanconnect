@@ -31,11 +31,7 @@ func (c *Client) Subscribe(url string) (*Server, error) {
 	if err != nil {
 		return nil, err
 	}
-	r, err := http.NewRequest(http.MethodPost, c.cfg.URL+"/iocm/app/sub/v1.1.0/subscribe", bytes.NewBuffer(body))
-	if err != nil {
-		return nil, err
-	}
-	resp, err := c.doRequest(r)
+	resp, err := c.request(http.MethodPost, "/iocm/app/sub/v1.1.0/subscribe", bytes.NewBuffer(body))
 	if err != nil {
 		return nil, err
 	}
@@ -78,11 +74,7 @@ func (c *Client) RegisterDevice(imei string, timeoutV ...uint) (*RegistrationRep
 	if err != nil {
 		return nil, err
 	}
-	r, err := http.NewRequest(http.MethodPost, c.cfg.URL+"/iocm/app/reg/v1.2.0/devices", bytes.NewBuffer(body))
-	if err != nil {
-		return nil, err
-	}
-	resp, err := c.doRequest(r)
+	resp, err := c.request(http.MethodPost, "/iocm/app/reg/v1.2.0/devices", bytes.NewBuffer(body))
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +89,7 @@ func (c *Client) RegisterDevice(imei string, timeoutV ...uint) (*RegistrationRep
 }
 
 func (c *Client) SetDeviceInfo(deviceID, name string) error {
-	type deviceInfoSet struct {
+	b := struct {
 		Name             string `json:"name"`
 		EndUserID        string `json:"endUserId"`
 		Mute             string `json:"mute"`
@@ -107,9 +99,7 @@ func (c *Client) SetDeviceInfo(deviceID, name string) error {
 		DeviceType       string `json:"deviceType"`
 		ProtocolType     string `json:"protocolType"`
 		Model            string `json:"model"`
-	}
-
-	b := deviceInfoSet{
+	}{
 		Name:             name,
 		EndUserID:        c.cfg.EndUserID,
 		Mute:             "FALSE",
@@ -124,18 +114,12 @@ func (c *Client) SetDeviceInfo(deviceID, name string) error {
 	if err != nil {
 		return err
 	}
-
-	r, err := http.NewRequest(http.MethodPut, c.cfg.URL+"/iocm/app/dm/v1.2.0/devices/"+deviceID, bytes.NewBuffer(body))
-	if err != nil {
-		return err
-	}
-	resp, err := c.doRequest(r)
+	resp, err := c.request(http.MethodPut, "/iocm/app/dm/v1.2.0/devices/"+deviceID, bytes.NewBuffer(body))
 	if err != nil {
 		return err
 	}
 	if resp.StatusCode != http.StatusNoContent {
 		return errors.New("invalid response code: " + resp.Status)
 	}
-
 	return nil
 }

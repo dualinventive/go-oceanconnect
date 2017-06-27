@@ -133,12 +133,7 @@ func (u *DeviceData) UnmarshalJSON(data []byte) error {
 
 // GetHistoricalData returns data from specific device
 func (d *Device) GetHistoricalData() ([]DeviceData, error) {
-	r, err := http.NewRequest(http.MethodGet, d.client.cfg.URL+"/iocm/app/data/v1.1.0/deviceDataHistory?deviceId="+d.DeviceID+"&gatewayId="+d.GatewayID, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	resp, err := d.client.doRequest(r)
+	resp, err := d.client.request(http.MethodGet, "/iocm/app/data/v1.1.0/deviceDataHistory?deviceId="+d.DeviceID+"&gatewayId="+d.GatewayID, nil)
 	if err != nil {
 		return nil, err
 	}
