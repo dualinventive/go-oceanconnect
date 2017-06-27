@@ -8,6 +8,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"strconv"
 	"sync"
@@ -71,6 +72,14 @@ func NewClient(c Config) (*Client, error) {
 	}, nil
 }
 
+func (c *Client) request(method, urlStr string, body io.Reader) (*http.Response, error) {
+	r, err := http.NewRequest(method, c.cfg.URL+urlStr, body)
+	if err != nil {
+		return nil, err
+	}
+	return c.doRequest(r)
+}
+
 func (c *Client) doRequest(req *http.Request) (*http.Response, error) {
 	c.reqLock.Lock()
 	defer c.reqLock.Unlock()
@@ -86,15 +95,26 @@ func (c *Client) doRequest(req *http.Request) (*http.Response, error) {
 	return c.c.Do(req)
 }
 
-// GetDevices returns struct with devices
-func (c *Client) GetDevices(dev GetDevicesStruct) ([]Device, error) {
-	s := c.getQueryStringForDeviceGet(dev)
-	r, err := http.NewRequest(http.MethodGet, s, nil)
+func (c *Client) GetDevice(deviceID string) (*Device, error) {
+	resp, err := c.request(http.MethodGet, "/iocm/app/dm/v1.1.0/devices/"+deviceID, nil)
 	if err != nil {
 		return nil, err
 	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, errors.New("invalid response code: " + resp.Status)
+	}
 
-	resp, err := c.doRequest(r)
+	// save device response
+	d := &Device{client: c}
+	if err := json.NewDecoder(resp.Body).Decode(d); err != nil {
+		return nil, err
+	}
+	return d, nil
+}
+
+// GetDevices returns struct with devices
+func (c *Client) GetDevices(dev GetDevicesStruct) ([]Device, error) {
+	resp, err := c.request(http.MethodGet, c.getQueryStringForDeviceGet(dev), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -116,7 +136,7 @@ func (c *Client) GetDevices(dev GetDevicesStruct) ([]Device, error) {
 }
 
 func (c *Client) getQueryStringForDeviceGet(dev GetDevicesStruct) string {
-	s := c.cfg.URL + "/iocm/app/dm/v1.1.0/devices?"
+	s := "/iocm/app/dm/v1.1.0/devices?"
 	if dev.GatewayID != "" {
 		s += "gatewayId=" + dev.GatewayID + "&"
 	}

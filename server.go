@@ -6,40 +6,71 @@ package oceanconnect
 
 import (
 	"encoding/json"
-	"fmt"
-	"io/ioutil"
-	"log"
 	"net/http"
+
+	"sync"
+
+	"io/ioutil"
+
+	"github.com/Sirupsen/logrus"
 )
 
-//DeviceDataChanged stuct with response data
-type DeviceDataChanged struct {
-	NotifyType string
-	DeviceID   string
-	GatewayID  string
-	RequestID  string
-	Service    `json:"service"`
+type NotificationFunc func(interface{}) error
+
+type Server struct {
+	cbsLock sync.RWMutex
+	cbs     map[Notification]NotificationFunc
 }
 
-func handler(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Got request:")
-	fmt.Printf("%+v\n", r.Header)
-	contents, err := ioutil.ReadAll(r.Body)
+func (s *Server) handler(w http.ResponseWriter, r *http.Request) {
+	buf, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		log.Fatal(err)
+		return
 	}
-	fmt.Printf("%s\n\n", string(contents))
 
-	var data DeviceDataChanged
-	if err := json.Unmarshal(contents, &data); err != nil {
-		log.Fatal(err)
+	var n struct {
+		NotifyType string `json:"notifyType"`
 	}
-	fmt.Printf("data: %+v\n", data)
+	if err := json.Unmarshal(buf, &n); err != nil {
+		logrus.Errorf("error decoding notification type")
+		return
+	}
 
+	if err := s.runCallback(Notification(n.NotifyType), buf); err != nil {
+		logrus.Errorf("Error running callback: %v", err)
+		return
+	}
 }
 
-// NewServer creates new server
-func NewServer() {
-	http.HandleFunc("/", handler)
-	http.ListenAndServe(":8080", nil)
+func (s *Server) runCallback(not Notification, dec []byte) error {
+	s.cbsLock.RLock()
+	defer s.cbsLock.RUnlock()
+
+	if s.cbs == nil {
+		logrus.Infof("no callbacks registered, callback received")
+	}
+	cb, ok := s.cbs[not]
+	if ok {
+		v, err := notificationDeserializer(not, dec)
+		if err != nil {
+			return err
+		}
+		return cb(v)
+	}
+	logrus.Debugf("no callback registered for %s", string(not))
+	return nil
+}
+
+func (s *Server) ListenAndServe(uri string) error {
+	http.HandleFunc("/", s.handler)
+	return http.ListenAndServe(uri, nil)
+}
+
+func (s *Server) RegisterCallback(not Notification, cb NotificationFunc) {
+	s.cbsLock.Lock()
+	if s.cbs == nil {
+		s.cbs = make(map[Notification]NotificationFunc)
+	}
+	s.cbs[not] = cb
+	s.cbsLock.Unlock()
 }
