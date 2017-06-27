@@ -19,13 +19,13 @@ import (
 
 // Device struct with device data
 type Device struct {
-	DeviceID         string
-	GatewayID        string
-	NodeType         string
-	CreateTime       OcTime
-	LastModifiedTime OcTime
-	DeviceInfo       `json:"deviceInfo"`
-	Services         []Service
+	DeviceID         string     `json:"deviceId"`
+	GatewayID        string     `json:"gatewayId"`
+	NodeType         string     `json:"nodeType"`
+	CreateTime       OcTime     `json:"creationTime"`
+	LastModifiedTime OcTime     `json:"lastModifiedTime"`
+	DeviceInfo       DeviceInfo `json:"deviceInfo"`
+	Services         []Service  `json:"services"`
 	client           *Client
 }
 

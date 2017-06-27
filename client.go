@@ -95,6 +95,23 @@ func (c *Client) doRequest(req *http.Request) (*http.Response, error) {
 	return c.c.Do(req)
 }
 
+func (c *Client) GetDevice(deviceID string) (*Device, error) {
+	resp, err := c.request(http.MethodGet, "/iocm/app/dm/v1.1.0/devices/"+deviceID, nil)
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, errors.New("invalid response code: " + resp.Status)
+	}
+
+	// save device response
+	d := &Device{client: c}
+	if err := json.NewDecoder(resp.Body).Decode(d); err != nil {
+		return nil, err
+	}
+	return d, nil
+}
+
 // GetDevices returns struct with devices
 func (c *Client) GetDevices(dev GetDevicesStruct) ([]Device, error) {
 	resp, err := c.request(http.MethodGet, c.getQueryStringForDeviceGet(dev), nil)
