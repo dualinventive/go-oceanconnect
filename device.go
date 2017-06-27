@@ -5,10 +5,7 @@
 package oceanconnect
 
 import (
-<<<<<<< 7137e20151b2fc07385a9bbfa8b15ac60132c8e9
 	"bytes"
-=======
->>>>>>> Message pushing work in progress, also fix automatic base64 decoding
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -181,12 +178,7 @@ func (d *Device) Command(data []byte, timeoutSec int64) error {
 	if err != nil {
 		return err
 	}
-	r, err := http.NewRequest(http.MethodPost, d.client.cfg.URL+"/iocm/app/cmd/v1.2.0/devices/"+d.DeviceID+"/commands", bytes.NewBuffer(body))
-	if err != nil {
-		return err
-	}
-
-	resp, err := d.client.doRequest(r)
+	resp, err := d.client.request(http.MethodPost, "/iocm/app/cmd/v1.2.0/devices/"+d.DeviceID+"/commands", bytes.NewBuffer(body))
 	if err != nil {
 		return err
 	}
@@ -197,12 +189,5 @@ func (d *Device) Command(data []byte, timeoutSec int64) error {
 	if resp.StatusCode != http.StatusOK {
 		return errors.New("invalid response code: " + resp.Status)
 	}
-
-	// save device response
-	/*	dh := deviceHistory{}
-		if err := json.NewDecoder(resp.Body).Decode(&dh); err != nil {
-			return nil, err
-		}
-		return dh.DeviceData, nil*/
 	return nil
 }
