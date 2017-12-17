@@ -6,13 +6,11 @@ package oceanconnect
 
 import (
 	"encoding/json"
+	"io/ioutil"
 	"net/http"
-
 	"sync"
 
-	"io/ioutil"
-
-	"github.com/Sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 )
 
 type NotificationFunc func(interface{}) error

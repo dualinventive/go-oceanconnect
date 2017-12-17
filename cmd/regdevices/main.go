@@ -8,9 +8,10 @@ import (
 	"flag"
 	"io/ioutil"
 
-	"github.com/Sirupsen/logrus"
-	"github.com/dualinventive/go-oceanconnect"
+	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
+
+	"github.com/dualinventive/go-oceanconnect"
 )
 
 var (

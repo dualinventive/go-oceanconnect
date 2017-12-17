@@ -11,7 +11,7 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/Sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 )
 
 // loginResponse struct with response data
