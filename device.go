@@ -28,31 +28,20 @@ type Device struct {
 
 // Service struct which holds service information data
 type Service struct {
-	ServiceID   string
-	ServiceType string
+	ServiceID   string `json:"serviceId"`
+	ServiceType string `json:"serviceType"`
 	Data        []byte `json:"data"`
-	EventTime   OcTime
-	ServiceInfo string `json:",omitEmpty"`
+	EventTime   OcTime `json:"eventTime`
+	ServiceInfo string `json:"serviceInfo"`
 }
 
 func (u *Service) UnmarshalJSON(data []byte) error {
-	srvID := &struct {
-		ServiceID string
-	}{}
 
-	if err := json.Unmarshal(data, srvID); err != nil {
-		return err
-	}
-	if srvID.ServiceID != "RawData" {
-		return errors.New("service type not supported: " + srvID.ServiceID)
-	}
 
 	type Alias Service
 
 	aux := &struct {
-		Data struct {
-			RawData string `json:"rawData"`
-		} `json:"data"`
+		Data interface{} `json:"data"`
 		*Alias
 	}{
 		Alias: (*Alias)(u),
@@ -62,7 +51,7 @@ func (u *Service) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	var err error
-	u.Data, err = base64.StdEncoding.DecodeString(aux.Data.RawData)
+	u.Data, err = json.Marshal(aux.Data)
 	return err
 }
 
@@ -113,18 +102,16 @@ type DeviceData struct {
 func (u *DeviceData) UnmarshalJSON(data []byte) error {
 	type Alias DeviceData
 	aux := &struct {
-		Data struct {
-			RawData string `json:"rawData"`
-		} `json:"data"`
+		Data interface{} `json:"data"`
 		*Alias
 	}{
 		Alias: (*Alias)(u),
 	}
-	if err := json.Unmarshal(data, &aux); err != nil {
+	if err := json.Unmarshal(data, aux); err != nil {
 		return err
 	}
 	var err error
-	u.Data, err = base64.StdEncoding.DecodeString(aux.Data.RawData)
+	u.Data, err = json.Marshal(aux.Data)
 	return err
 }
 
