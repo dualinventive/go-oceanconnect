@@ -37,7 +37,6 @@ type Service struct {
 
 func (u *Service) UnmarshalJSON(data []byte) error {
 
-
 	type Alias Service
 
 	aux := &struct {
@@ -94,7 +93,7 @@ type DeviceData struct {
 	DeviceID  string
 	GatewayID string
 	Appid     string
-	ServiceIS string
+	ServiceID string
 	Data      []byte `json:"data"`
 	Timestamp OcTime
 }
@@ -130,6 +129,7 @@ func (d *Device) GetHistoricalData() ([]DeviceData, error) {
 	if err := json.NewDecoder(resp.Body).Decode(&dh); err != nil {
 		return nil, err
 	}
+
 	return dh.DeviceData, nil
 }
 

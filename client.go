@@ -90,7 +90,7 @@ func (c *Client) doRequest(req *http.Request) (*http.Response, error) {
 		}
 	}
 	req.Header.Add("app_key", c.cfg.AppID)
-	req.Header.Add("access_token", c.token)
+	req.Header.Add("Authorization", c.token)
 	req.Header.Add("Content-Type", "application/json")
 	return c.c.Do(req)
 }
