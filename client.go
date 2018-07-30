@@ -5,11 +5,14 @@
 package oceanconnect
 
 import (
+	"bytes"
 	"crypto/tls"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
+	"net/http/httputil"
 	"strconv"
 	"sync"
 	"time"
@@ -133,6 +136,49 @@ func (c *Client) GetDevices(dev GetDevicesStruct) ([]Device, error) {
 		retdevs = append(retdevs, dev)
 	}
 	return retdevs, err
+}
+
+// SendCommand send command to target device
+func (c *Client) SendCommand(deviceID string, serviceID string, idata interface{}, timeoutSec int64) error {
+	type devCmdBodyCommand struct {
+		ServiceID string      `json:"serviceId"`
+		Method    string      `json:"method"`
+		Params    interface{} `json:"paras"`
+	}
+	type devCmdBody struct {
+		DeviceID    string            `json:"deviceId"`
+		Command     devCmdBodyCommand `json:"command"`
+		CallbackURL string            `json:"callbackUrl"`
+		ExpireTime  int64             `json:"expireTime"`
+	}
+
+	cmd := devCmdBody{
+		Command: devCmdBodyCommand{
+			ServiceID: serviceID,
+			Method:    serviceID,
+			Params:    idata,
+		},
+		ExpireTime: timeoutSec,
+	}
+
+	body, err := json.Marshal(cmd)
+	if err != nil {
+		return err
+	}
+
+	resp, err := c.request(http.MethodPost, "/iocm/app/cmd/v1.4.0/deviceCommands", bytes.NewBuffer(body))
+	if err != nil {
+		return err
+	}
+
+	rs, _ := httputil.DumpResponse(resp, true)
+	fmt.Printf("==== response =====\n%s\n", string(rs))
+
+	if resp.StatusCode != http.StatusOK {
+		return errors.New("invalid response code: " + resp.Status)
+	}
+
+	return nil
 }
 
 func (c *Client) getQueryStringForDeviceGet(dev GetDevicesStruct) string {

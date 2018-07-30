@@ -5,13 +5,9 @@
 package oceanconnect
 
 import (
-	"bytes"
-	"encoding/base64"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
-	"net/http/httputil"
 )
 
 // Device struct with device data
@@ -133,48 +129,7 @@ func (d *Device) GetHistoricalData() ([]DeviceData, error) {
 	return dh.DeviceData, nil
 }
 
-func (d *Device) Command(data []byte, timeoutSec int64) error {
-	type devCmdBodyRawData struct {
-		RawData string `json:"rawData"`
-	}
-	type devCmdBodyCommand struct {
-		ServiceID string            `json:"serviceId"`
-		Method    string            `json:"method"`
-		Params    devCmdBodyRawData `json:"paras"`
-	}
-	type devCmdBody struct {
-		//RequestID   string            `json:"requestId"`
-		Command devCmdBodyCommand `json:"command"`
-		//CallbackURL string            `json:"callbackUrl"`
-		ExpireTime int64 `json:"expireTime"`
-	}
-
-	cmd := devCmdBody{
-		//RequestID: "1234567890",
-		Command: devCmdBodyCommand{
-			ServiceID: "RawData",
-			Method:    "RawData",
-			Params: devCmdBodyRawData{
-				RawData: base64.StdEncoding.EncodeToString(data),
-			},
-		},
-		//CallbackURL: "https://www.google.com/",
-		ExpireTime: timeoutSec,
-	}
-	body, err := json.Marshal(cmd)
-	if err != nil {
-		return err
-	}
-	resp, err := d.client.request(http.MethodPost, "/iocm/app/cmd/v1.2.0/devices/"+d.DeviceID+"/commands", bytes.NewBuffer(body))
-	if err != nil {
-		return err
-	}
-
-	rs, _ := httputil.DumpResponse(resp, true)
-	fmt.Printf("==== response =====\n%s\n", string(rs))
-
-	if resp.StatusCode != http.StatusOK {
-		return errors.New("invalid response code: " + resp.Status)
-	}
-	return nil
+// Command send command to device
+func (d *Device) Command(serviceID string, idata interface{}, timeoutSec int64) error {
+	return d.client.SendCommand(d.DeviceID, serviceID, idata, timeoutSec)
 }
