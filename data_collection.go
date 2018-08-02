@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 )
 
@@ -91,7 +92,6 @@ func (c *Client) RegisterDevice(imei string, timeoutV ...uint) (*RegistrationRep
 func (c *Client) SetDeviceInfo(deviceID, name string) error {
 	b := struct {
 		Name             string `json:"name"`
-		EndUserID        string `json:"endUserId"`
 		Mute             string `json:"mute"`
 		ManufacturerID   string `json:"manufacturerId"`
 		ManufacturerName string `json:"manufacturerName"`
@@ -101,7 +101,6 @@ func (c *Client) SetDeviceInfo(deviceID, name string) error {
 		Model            string `json:"model"`
 	}{
 		Name:             name,
-		EndUserID:        c.cfg.EndUserID,
 		Mute:             "FALSE",
 		ManufacturerID:   c.cfg.ManufacturerID,
 		ManufacturerName: c.cfg.ManufacturerName,
@@ -110,11 +109,13 @@ func (c *Client) SetDeviceInfo(deviceID, name string) error {
 		ProtocolType:     "CoAP",
 		Model:            c.cfg.Model,
 	}
+
 	body, err := json.Marshal(b)
+	fmt.Println(string(body))
 	if err != nil {
 		return err
 	}
-	resp, err := c.request(http.MethodPut, "/iocm/app/dm/v1.2.0/devices/"+deviceID, bytes.NewBuffer(body))
+	resp, err := c.request(http.MethodPut, "/iocm/app/dm/v1.2.0/devices/"+deviceID+"?appId="+c.cfg.AppID, bytes.NewBuffer(body))
 	if err != nil {
 		return err
 	}

@@ -9,7 +9,6 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"net/http"
 	"net/http/httputil"
@@ -153,6 +152,7 @@ func (c *Client) SendCommand(deviceID string, serviceID string, idata interface{
 	}
 
 	cmd := devCmdBody{
+		DeviceID: deviceID,
 		Command: devCmdBodyCommand{
 			ServiceID: serviceID,
 			Method:    serviceID,
@@ -171,10 +171,9 @@ func (c *Client) SendCommand(deviceID string, serviceID string, idata interface{
 		return err
 	}
 
-	rs, _ := httputil.DumpResponse(resp, true)
-	fmt.Printf("==== response =====\n%s\n", string(rs))
+	httputil.DumpResponse(resp, true)
 
-	if resp.StatusCode != http.StatusOK {
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
 		return errors.New("invalid response code: " + resp.Status)
 	}
 
