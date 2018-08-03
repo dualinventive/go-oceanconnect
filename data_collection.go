@@ -8,7 +8,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 )
 
@@ -111,16 +110,28 @@ func (c *Client) SetDeviceInfo(deviceID, name string) error {
 	}
 
 	body, err := json.Marshal(b)
-	fmt.Println(string(body))
 	if err != nil {
 		return err
 	}
-	resp, err := c.request(http.MethodPut, "/iocm/app/dm/v1.2.0/devices/"+deviceID+"?appId="+c.cfg.AppID, bytes.NewBuffer(body))
+	resp, err := c.request(http.MethodPut, "/iocm/app/dm/v1.2.0/devices/"+deviceID, bytes.NewBuffer(body))
 	if err != nil {
 		return err
 	}
 	if resp.StatusCode != http.StatusNoContent {
 		return errors.New("invalid response code: " + resp.Status)
 	}
+	return nil
+}
+
+func (c *Client) DeleteDevice(deviceID string) error {
+
+	resp, err := c.request(http.MethodDelete, "/iocm/app/dm/v1.1.0/devices/"+deviceID, nil)
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode != http.StatusNoContent {
+		return errors.New("invalid response code: " + resp.Status)
+	}
+
 	return nil
 }
