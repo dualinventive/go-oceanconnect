@@ -130,6 +130,6 @@ func (d *Device) GetHistoricalData() ([]DeviceData, error) {
 }
 
 // Command send command to device
-func (d *Device) Command(serviceID string, idata interface{}, timeoutSec int64) error {
-	return d.client.SendCommand(d.DeviceID, serviceID, idata, timeoutSec)
+func (d *Device) Command(serviceID string, method string, idata interface{}, timeoutSec int64) error {
+	return d.client.SendCommand(d.DeviceID, serviceID, method, idata, timeoutSec)
 }

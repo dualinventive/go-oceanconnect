@@ -138,7 +138,7 @@ func (c *Client) GetDevices(dev GetDevicesStruct) ([]Device, error) {
 }
 
 // SendCommand send command to target device
-func (c *Client) SendCommand(deviceID string, serviceID string, idata interface{}, timeoutSec int64) error {
+func (c *Client) SendCommand(deviceID string, serviceID string, method string, idata interface{}, timeoutSec int64) error {
 	type devCmdBodyCommand struct {
 		ServiceID string      `json:"serviceId"`
 		Method    string      `json:"method"`
@@ -155,7 +155,7 @@ func (c *Client) SendCommand(deviceID string, serviceID string, idata interface{
 		DeviceID: deviceID,
 		Command: devCmdBodyCommand{
 			ServiceID: serviceID,
-			Method:    serviceID,
+			Method:    method,
 			Params:    idata,
 		},
 		ExpireTime: timeoutSec,
