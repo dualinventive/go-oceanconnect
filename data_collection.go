@@ -74,7 +74,7 @@ func (c *Client) RegisterDevice(imei string, timeoutV ...uint) (*RegistrationRep
 	if err != nil {
 		return nil, err
 	}
-	resp, err := c.request(http.MethodPost, "/iocm/app/reg/v1.2.0/devices", bytes.NewBuffer(body))
+	resp, err := c.request(http.MethodPost, "/iocm/app/reg/v1.2.0/devices?appId="+c.cfg.AppID, bytes.NewBuffer(body))
 	if err != nil {
 		return nil, err
 	}
@@ -113,7 +113,7 @@ func (c *Client) SetDeviceInfo(deviceID, name string) error {
 	if err != nil {
 		return err
 	}
-	resp, err := c.request(http.MethodPut, "/iocm/app/dm/v1.2.0/devices/"+deviceID, bytes.NewBuffer(body))
+	resp, err := c.request(http.MethodPut, "/iocm/app/dm/v1.2.0/devices/"+deviceID+"?appId="+c.cfg.AppID, bytes.NewBuffer(body))
 	if err != nil {
 		return err
 	}
