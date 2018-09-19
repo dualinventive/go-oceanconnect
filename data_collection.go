@@ -31,7 +31,7 @@ func (c *Client) Subscribe(url string) (*Server, error) {
 	if err != nil {
 		return nil, err
 	}
-	resp, err := c.request(http.MethodPost, "/iocm/app/sub/v1.1.0/subscribe", bytes.NewBuffer(body))
+	resp, err := c.request(http.MethodPost, "/iocm/app/sub/v1.2.0/subscribe", bytes.NewBuffer(body))
 	if err != nil {
 		return nil, err
 	}
