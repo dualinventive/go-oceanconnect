@@ -38,7 +38,7 @@ func (c *Client) Login() error {
 	l := loginResponse{}
 	err = json.NewDecoder(resp.Body).Decode(&l)
 	if err == nil {
-		c.token = l.AccessToken
+		c.token = l.TokenType + " " + l.AccessToken
 		c.tokenExpires = time.Now().Add(time.Second * time.Duration(l.ExpiresIn))
 		logrus.Infof("Token retrieved, expires: %v", c.tokenExpires)
 	}

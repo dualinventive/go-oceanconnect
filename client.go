@@ -5,11 +5,13 @@
 package oceanconnect
 
 import (
+	"bytes"
 	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
+	"net/http/httputil"
 	"strconv"
 	"sync"
 	"time"
@@ -90,7 +92,7 @@ func (c *Client) doRequest(req *http.Request) (*http.Response, error) {
 		}
 	}
 	req.Header.Add("app_key", c.cfg.AppID)
-	req.Header.Add("access_token", c.token)
+	req.Header.Add("Authorization", c.token)
 	req.Header.Add("Content-Type", "application/json")
 	return c.c.Do(req)
 }
@@ -133,6 +135,49 @@ func (c *Client) GetDevices(dev GetDevicesStruct) ([]Device, error) {
 		retdevs = append(retdevs, dev)
 	}
 	return retdevs, err
+}
+
+// SendCommand send command to target device
+func (c *Client) SendCommand(deviceID string, serviceID string, method string, idata interface{}, timeoutSec int64) error {
+	type devCmdBodyCommand struct {
+		ServiceID string      `json:"serviceId"`
+		Method    string      `json:"method"`
+		Params    interface{} `json:"paras"`
+	}
+	type devCmdBody struct {
+		DeviceID    string            `json:"deviceId"`
+		Command     devCmdBodyCommand `json:"command"`
+		CallbackURL string            `json:"callbackUrl"`
+		ExpireTime  int64             `json:"expireTime"`
+	}
+
+	cmd := devCmdBody{
+		DeviceID: deviceID,
+		Command: devCmdBodyCommand{
+			ServiceID: serviceID,
+			Method:    method,
+			Params:    idata,
+		},
+		ExpireTime: timeoutSec,
+	}
+
+	body, err := json.Marshal(cmd)
+	if err != nil {
+		return err
+	}
+
+	resp, err := c.request(http.MethodPost, "/iocm/app/cmd/v1.4.0/deviceCommands", bytes.NewBuffer(body))
+	if err != nil {
+		return err
+	}
+
+	httputil.DumpResponse(resp, true)
+
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
+		return errors.New("invalid response code: " + resp.Status)
+	}
+
+	return nil
 }
 
 func (c *Client) getQueryStringForDeviceGet(dev GetDevicesStruct) string {

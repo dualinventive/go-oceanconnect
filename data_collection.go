@@ -31,7 +31,7 @@ func (c *Client) Subscribe(url string) (*Server, error) {
 	if err != nil {
 		return nil, err
 	}
-	resp, err := c.request(http.MethodPost, "/iocm/app/sub/v1.1.0/subscribe", bytes.NewBuffer(body))
+	resp, err := c.request(http.MethodPost, "/iocm/app/sub/v1.2.0/subscribe", bytes.NewBuffer(body))
 	if err != nil {
 		return nil, err
 	}
@@ -74,7 +74,7 @@ func (c *Client) RegisterDevice(imei string, timeoutV ...uint) (*RegistrationRep
 	if err != nil {
 		return nil, err
 	}
-	resp, err := c.request(http.MethodPost, "/iocm/app/reg/v1.2.0/devices", bytes.NewBuffer(body))
+	resp, err := c.request(http.MethodPost, "/iocm/app/reg/v1.2.0/devices?appId="+c.cfg.AppID, bytes.NewBuffer(body))
 	if err != nil {
 		return nil, err
 	}
@@ -91,7 +91,6 @@ func (c *Client) RegisterDevice(imei string, timeoutV ...uint) (*RegistrationRep
 func (c *Client) SetDeviceInfo(deviceID, name string) error {
 	b := struct {
 		Name             string `json:"name"`
-		EndUserID        string `json:"endUserId"`
 		Mute             string `json:"mute"`
 		ManufacturerID   string `json:"manufacturerId"`
 		ManufacturerName string `json:"manufacturerName"`
@@ -101,7 +100,6 @@ func (c *Client) SetDeviceInfo(deviceID, name string) error {
 		Model            string `json:"model"`
 	}{
 		Name:             name,
-		EndUserID:        c.cfg.EndUserID,
 		Mute:             "FALSE",
 		ManufacturerID:   c.cfg.ManufacturerID,
 		ManufacturerName: c.cfg.ManufacturerName,
@@ -110,16 +108,30 @@ func (c *Client) SetDeviceInfo(deviceID, name string) error {
 		ProtocolType:     "CoAP",
 		Model:            c.cfg.Model,
 	}
+
 	body, err := json.Marshal(b)
 	if err != nil {
 		return err
 	}
-	resp, err := c.request(http.MethodPut, "/iocm/app/dm/v1.2.0/devices/"+deviceID, bytes.NewBuffer(body))
+	resp, err := c.request(http.MethodPut, "/iocm/app/dm/v1.2.0/devices/"+deviceID+"?appId="+c.cfg.AppID, bytes.NewBuffer(body))
 	if err != nil {
 		return err
 	}
 	if resp.StatusCode != http.StatusNoContent {
 		return errors.New("invalid response code: " + resp.Status)
 	}
+	return nil
+}
+
+func (c *Client) DeleteDevice(deviceID string) error {
+
+	resp, err := c.request(http.MethodDelete, "/iocm/app/dm/v1.1.0/devices/"+deviceID, nil)
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode != http.StatusNoContent {
+		return errors.New("invalid response code: " + resp.Status)
+	}
+
 	return nil
 }

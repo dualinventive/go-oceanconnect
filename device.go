@@ -5,13 +5,9 @@
 package oceanconnect
 
 import (
-	"bytes"
-	"encoding/base64"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
-	"net/http/httputil"
 )
 
 // Device struct with device data
@@ -28,31 +24,19 @@ type Device struct {
 
 // Service struct which holds service information data
 type Service struct {
-	ServiceID   string
-	ServiceType string
+	ServiceID   string `json:"serviceId"`
+	ServiceType string `json:"serviceType"`
 	Data        []byte `json:"data"`
-	EventTime   OcTime
-	ServiceInfo string `json:",omitEmpty"`
+	EventTime   OcTime `json:"eventTime`
+	ServiceInfo string `json:"serviceInfo"`
 }
 
 func (u *Service) UnmarshalJSON(data []byte) error {
-	srvID := &struct {
-		ServiceID string
-	}{}
-
-	if err := json.Unmarshal(data, srvID); err != nil {
-		return err
-	}
-	if srvID.ServiceID != "RawData" {
-		return errors.New("service type not supported: " + srvID.ServiceID)
-	}
 
 	type Alias Service
 
 	aux := &struct {
-		Data struct {
-			RawData string `json:"rawData"`
-		} `json:"data"`
+		Data interface{} `json:"data"`
 		*Alias
 	}{
 		Alias: (*Alias)(u),
@@ -62,7 +46,7 @@ func (u *Service) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	var err error
-	u.Data, err = base64.StdEncoding.DecodeString(aux.Data.RawData)
+	u.Data, err = json.Marshal(aux.Data)
 	return err
 }
 
@@ -105,7 +89,7 @@ type DeviceData struct {
 	DeviceID  string
 	GatewayID string
 	Appid     string
-	ServiceIS string
+	ServiceID string
 	Data      []byte `json:"data"`
 	Timestamp OcTime
 }
@@ -113,18 +97,16 @@ type DeviceData struct {
 func (u *DeviceData) UnmarshalJSON(data []byte) error {
 	type Alias DeviceData
 	aux := &struct {
-		Data struct {
-			RawData string `json:"rawData"`
-		} `json:"data"`
+		Data interface{} `json:"data"`
 		*Alias
 	}{
 		Alias: (*Alias)(u),
 	}
-	if err := json.Unmarshal(data, &aux); err != nil {
+	if err := json.Unmarshal(data, aux); err != nil {
 		return err
 	}
 	var err error
-	u.Data, err = base64.StdEncoding.DecodeString(aux.Data.RawData)
+	u.Data, err = json.Marshal(aux.Data)
 	return err
 }
 
@@ -143,51 +125,11 @@ func (d *Device) GetHistoricalData() ([]DeviceData, error) {
 	if err := json.NewDecoder(resp.Body).Decode(&dh); err != nil {
 		return nil, err
 	}
+
 	return dh.DeviceData, nil
 }
 
-func (d *Device) Command(data []byte, timeoutSec int64) error {
-	type devCmdBodyRawData struct {
-		RawData string `json:"rawData"`
-	}
-	type devCmdBodyCommand struct {
-		ServiceID string            `json:"serviceId"`
-		Method    string            `json:"method"`
-		Params    devCmdBodyRawData `json:"paras"`
-	}
-	type devCmdBody struct {
-		//RequestID   string            `json:"requestId"`
-		Command devCmdBodyCommand `json:"command"`
-		//CallbackURL string            `json:"callbackUrl"`
-		ExpireTime int64 `json:"expireTime"`
-	}
-
-	cmd := devCmdBody{
-		//RequestID: "1234567890",
-		Command: devCmdBodyCommand{
-			ServiceID: "RawData",
-			Method:    "RawData",
-			Params: devCmdBodyRawData{
-				RawData: base64.StdEncoding.EncodeToString(data),
-			},
-		},
-		//CallbackURL: "https://www.google.com/",
-		ExpireTime: timeoutSec,
-	}
-	body, err := json.Marshal(cmd)
-	if err != nil {
-		return err
-	}
-	resp, err := d.client.request(http.MethodPost, "/iocm/app/cmd/v1.2.0/devices/"+d.DeviceID+"/commands", bytes.NewBuffer(body))
-	if err != nil {
-		return err
-	}
-
-	rs, _ := httputil.DumpResponse(resp, true)
-	fmt.Printf("==== response =====\n%s\n", string(rs))
-
-	if resp.StatusCode != http.StatusOK {
-		return errors.New("invalid response code: " + resp.Status)
-	}
-	return nil
+// Command send command to device
+func (d *Device) Command(serviceID string, method string, idata interface{}, timeoutSec int64) error {
+	return d.client.SendCommand(d.DeviceID, serviceID, method, idata, timeoutSec)
 }
